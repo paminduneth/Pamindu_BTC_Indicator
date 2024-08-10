@@ -1,0 +1,174 @@
+// © pamindu
+
+//@version=5
+
+indicator(title='pamindu indicator 1', shorttitle='pamindu Indicator', overlay=true)
+
+
+shemas = input(false, 'Show EMAs')
+shrsibarc = input(true, 'Show RSI Bar Colors')
+shichim = input(false, title='Show Ichimoku Clouds')
+shbb = input(false, title='Show Bolinger Bands')
+shbbs = input(true, title='Show BB Signals')
+shbbdc = input(false, title='Show BB Aggressive Signals')
+ 
+
+//colors
+
+sblue0 = color.new(color.blue, 0)
+spurple0 = color.new(color.purple, 0)
+sgreen0 = color.new(color.green, 0)
+syellow0 = color.new(color.yellow, 0)
+sred0 = color.new(color.red, 0)
+sorange0 = color.new(color.orange, 0)
+sblack0 = color.new(color.black, 0)
+swhite1 = color.new(color.white, 100)
+sdblue0 = color.new(#001c68, 0)
+
+//Multi-Time Frame EMAs
+
+src = input(close, title='Source')
+ssema1res = input.timeframe(title='EMA 1 Time Frame', defval='', group='EMAs')
+ssema1l = input.int(8, title='EMA 1 Period', group='EMAs')
+ssema2res = input.timeframe(title='EMA 2 Time Frame', defval='', group='EMAs')
+ssema2l = input.int(13, title='EMA 2 Period', group='EMAs')
+ssema3res = input.timeframe(title='EMA 3 Time Frame', defval='', group='EMAs')
+ssema3l = input.int(21, title='EMA 3 Period', group='EMAs')
+ssema4res = input.timeframe(title='EMA 4 Time Frame', defval='', group='EMAs')
+ssema4l = input.int(34, title='EMA 4 Period', group='EMAs')
+ssema5res = input.timeframe(title='EMA 5 Time Frame', defval='', group='EMAs')
+ssema5l = input.int(55, title='EMA 5 Period', group='EMAs')
+ssema6res = input.timeframe(title='EMA 6 Time Frame', defval='', group='EMAs')
+ssema6l = input.int(100, title='EMA 6 Period', group='EMAs')
+ssema7res = input.timeframe(title='EMA 7 Time Frame', defval='', group='EMAs')
+ssema7l = input.int(200, title='EMA 7 Period', group='EMAs')
+
+ssema1 = request.security(syminfo.tickerid, ssema1res, ta.ema(src, ssema1l))
+ssema2 = request.security(syminfo.tickerid, ssema2res, ta.ema(src, ssema2l))
+ssema3 = request.security(syminfo.tickerid, ssema3res, ta.ema(src, ssema3l))
+ssema4 = request.security(syminfo.tickerid, ssema4res, ta.ema(src, ssema4l))
+ssema5 = request.security(syminfo.tickerid, ssema5res, ta.ema(src, ssema5l))
+ssema6 = request.security(syminfo.tickerid, ssema6res, ta.ema(src, ssema6l))
+ssema7 = request.security(syminfo.tickerid, ssema7res, ta.ema(src, ssema7l))
+
+//new ema colors
+
+ncolor200 = ssema7 >= ssema7[2] ? color.lime : ssema7 < ssema7[2] ? color.red : na
+ncolor100 = ssema6 >= ssema6[2] ? color.lime : ssema6 < ssema6[2] ? color.red : na
+ncolor55 = ssema5 >= ssema5[2] ? color.lime : ssema5 < ssema5[2] ? color.red : na
+
+
+plot(shemas ? ssema1 : na, title='MTF EMA 1', color=sblue0, linewidth=1, offset=0)
+plot(shemas ? ssema2 : na, title='MTF EMA 2', color=spurple0, linewidth=1, offset=0)
+plot(shemas ? ssema3 : na, title='MTF EMA 3', color=sgreen0, linewidth=1, offset=0)
+plot(shemas ? ssema4 : na, title='MTF EMA 4', color=syellow0, linewidth=1, offset=0)
+plot(shemas ? ssema5 : na, title='MTF EMA 5', color=ncolor55, linewidth=2, offset=0)
+plot(shemas ? ssema6 : na, title='MTF EMA 6', color=ncolor100, linewidth=2, offset=0)
+plot(shemas ? ssema7 : na, title='MTF EMA 7', color=ncolor200, linewidth=2, offset=0)
+
+
+
+
+// RSI Bar Colors
+
+ssr1len = input.int(14, minval=1, title='RSI Length', group='RSI Colors')
+rsimob = input(70, 'RSI OB Level')
+rsimos = input(30, 'RSI OS Level')
+
+rsi = ta.rsi(src, ssr1len)
+
+RSIover = rsi > 85
+RSI85 = rsi < 85 and rsi > 80
+RSI80 = rsi < 80 and rsi > 75
+RSI75 = rsi < 75 and rsi > rsimob
+RSI30 = rsi < rsimos and rsi > 25
+RSI25 = rsi < 25 and rsi > 20
+RSI20 = rsi < 20 and rsi > 15
+RSI15 = rsi < 15 and rsi > 10
+RSIunder = rsi < 10
+
+barcolor(shrsibarc ? RSIunder ? #ffffff : RSI15 ? #5142f5 : RSI20 ? #4284f5 : RSI25 ? #42aaf5 : RSI30 ? #42e0f5 : RSI75 ? #f5cb42 : RSI80 ? #f58742 : RSI85 ? #ff5500 : RSIover ? #ffffff : na : na, title='RSI Colors')
+
+//Ichimoku Clouds
+
+conversionPeriods = input.int(10, minval=1, title='Conversion Line Length', group='Ichimoku Clouds')
+basePeriods = input.int(30, minval=1, title='Base Line Length', group='Ichimoku Clouds')
+laggingSpan2Periods = input.int(60, minval=1, title='Leading Span B Length', group='Ichimoku Clouds')
+displacement = input.int(30, minval=1, title='Displacement', group='Ichimoku Clouds')
+donchian(len) =>
+    math.avg(ta.lowest(len), ta.highest(len))
+conversionLine = donchian(conversionPeriods)
+baseLine = donchian(basePeriods)
+leadLine1 = math.avg(conversionLine, baseLine)
+leadLine2 = donchian(laggingSpan2Periods)
+plot(shichim ? conversionLine : na, color=color.new(#2962FF, 0), title='Ichi Conversion Line')
+plot(shichim ? baseLine : na, color=color.new(#B71C1C, 0), title='Ichi Base Line')
+plot(shichim ? close : na, offset=-displacement + 1, color=color.new(#43A047, 0), title='Ichi Lagging Span')
+p1 = plot(shichim ? leadLine1 : na, offset=displacement - 1, color=color.new(#A5D6A7, 0), title='Ichi Leading Span A')
+p2 = plot(shichim ? leadLine2 : na, offset=displacement - 1, color=color.new(#EF9A9A, 0), title='Ichi Leading Span B')
+fill(p1, p2, color=leadLine1 > leadLine2 ? color.rgb(67, 160, 71, 90) : color.rgb(244, 67, 54, 90), title='Ichimoku Kumo Cloud', transp=90)
+
+ 
+
+//Bollinger Bands
+
+lengthbb = input.int(20, minval=1, group='Bollinger Bands')
+// src = input(close, title="Source")
+mult = input.float(2.0, minval=0.001, maxval=50, title='StdDev', group='Bollinger Bands')
+basis = ta.sma(src, lengthbb)
+dev = mult * ta.stdev(src, lengthbb)
+upper = basis + dev
+lower = basis - dev
+offset = input.int(0, 'Offset', minval=-500, maxval=500, group='Bollinger Bands')
+plot(shbb ? basis : na, 'BB Basis', color=color.new(#FF6D00, 0), offset=offset)
+pbb1 = plot(shbb ? upper : na, 'BB Upper', color=color.new(#2962FF, 0), offset=offset)
+pbb2 = plot(shbb ? lower : na, 'BB Lower', color=color.new(#2962FF, 0), offset=offset)
+fill(pbb1, pbb2, title='BB Background', color=color.rgb(33, 150, 243, 95))
+
+// Stoch
+
+periodK = input.int(9, title='%K Length', minval=1, group='BB Strategy Stoch')
+smoothK = input.int(3, title='%K Smoothing', minval=1, group='BB Strategy Stoch')
+periodD = input.int(3, title='%D Smoothing', minval=1)
+group = 'BB Strategy Stoch'
+k = ta.sma(ta.stoch(close, high, low, periodK), smoothK)
+d = ta.sma(k, periodD)
+
+
+// DEMA
+
+lengthd = input.int(15, minval=1, title='BB MA Length', group='BB Strategy MA')
+e1 = ta.ema(close, lengthd)
+e2 = ta.ema(e1, lengthd)
+dema = 2 * e1 - e2
+
+lengthdc = input.int(20, minval=1, title='BB MA2 Length', group='BB Strategy MA')
+lowerdc = ta.lowest(lengthdc)
+upperdc = ta.highest(lengthdc)
+basisdc = math.avg(upperdc, lowerdc)
+
+
+// RSI
+
+rsibb = ta.rsi(close, 2)
+rsibbos = input.int(9, 'BB RSI OS Level', group='BB RSI')
+rsibbob = input.int(91, 'BB RSI OB Level', group='BB RSI')
+
+
+//BB Strategy
+
+shortbb = open > close and close < dema and (high > upper or high[1] > upper) and k[1] > 65 and (rsibb > rsibbob or rsibb[1] > rsibbob or rsibb[2] > rsibbob or rsibb[3] > rsibbob)
+longbb = open < close and close > dema and (low < lower or low[1] < lower) and k[1] < 35 and (rsibb < rsibbos or rsibb[1] < rsibbos or rsibb[2] < rsibbos or rsibb[3] < rsibbos)
+
+
+plotshape(shbbs ? shortbb : na, style=shape.labeldown, color=sorange0, location=location.abovebar, size=size.tiny, title='Short Label', text='SS', textcolor=color.new(color.white, 0))
+plotshape(shbbs ? longbb : na, style=shape.labelup, color=sblue0, location=location.belowbar, size=size.tiny, title='Long Label', text='BB', textcolor=color.new(color.white, 0))
+
+
+shdc = close < open and close < upper and (high > upper or high[1] > upper) and (high >= upperdc or high[1] >= upperdc) and ta.crossunder(rsibb, rsibbob)
+lodc = close > open and close > lower and (low < lower or low[1] < lower) and (low <= lowerdc or low[1] <= lowerdc) and ta.crossover(rsibb, rsibbos)
+
+plotshape(shbbdc ? shdc : na, style=shape.labeldown, color=color.new(color.red, 0), location=location.abovebar, size=size.tiny, title='Short Label', text='S', textcolor=color.new(color.white, 0))
+plotshape(shbbdc ? lodc : na, style=shape.labelup, color=color.new(color.green, 0), location=location.belowbar, size=size.tiny, title='Long Label', text='B', textcolor=color.new(color.white, 0))
+
+alertcondition(shdc or lodc, title='Breakout Alert', message='Bullish/Bearish Breakout Alert')
